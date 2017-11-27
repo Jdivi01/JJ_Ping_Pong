@@ -28,8 +28,8 @@ class Game_Object():
 '''Handles the client side calls for a pong game'''
 class PongClient():
 		
-		
-	conn_est = False
+	conn_est = False #checks if connection has been established with remote client
+	rem_client_term = False #checks if remote client disconnected from server
 	
 	'''Initializes the client, establishes communication with the server'''
 	def __init__(self, pong):
@@ -51,7 +51,9 @@ class PongClient():
 		
 	'''Create the pong message'''
 	def compile_pong_message(self):
-		return '%d %s %s %s' % (self.client_id, self.paddle1.parse_coords(), self.ball.parse_coords(), self.net.parse_coords())
+		return '%d %s %s %s %d %d' % (self.client_id, self.paddle1.parse_coords(), 
+									self.net.parse_coords(), self.ball.parse_coords(), 
+									self.pong.player1Points, self.pong.player2Points)
 
 	'''Reset ball position and score for new game since connection was established'''
 	def reset_ui_for_new_game(self):
@@ -67,11 +69,15 @@ class PongClient():
 		split_msg = data.split(' ')
 		lead_byte = split_msg[0] #get the leading byte of the message
 		if lead_byte is 'N': #if the lead byte is an 'N' this indicates that there is no corresponding client
-			self.pong.chase_ball(self.paddle2.rect)
+			self.pong.user_message_text.set('Connection established, wating for remote client to start multiplayer game...')
+			self.pong.chase_ball(self.paddle2.rect)			
 		elif lead_byte is 'X': #if the lead byte is an 'X' this indicates that the corresponding client has lef thte game
+			self.rem_client_term = True
+			self.pong.user_message_text.set('Remote client has disconnected, restarting single player...')
 			self.pong.terminate_multiplayer()
 		else:
 			if not self.conn_est:
+					self.pong.user_message_text.set('Connected to Remote Client!')
 					self.reset_ui_for_new_game()
 			self.update_game_object_via_client_data(split_msg)
 	
@@ -85,13 +91,19 @@ class PongClient():
 		#only update the ball and net values for the newer client
 		#this makes the older client be the driver for ball and net values and nothing else
 		if int(split_msg[0]) > self.client_id:
-			ball_coor = self.extract_coords(split_msg[2]) #get the received ball coords
-			net_coor = self.extract_coords(split_msg[3]) #get the received net coords
+			net_coor = self.extract_coords(split_msg[2]) #get the received net coords
+			self.net.set_coords(net_coor)
+			
 			#invert the ball position to make both user experience similar visuals
+			ball_coor = self.extract_coords(split_msg[3]) #get the received ball coords
 			ball_coor[0] = self.win_width - ball_coor[0] 
 			ball_coor[2] = self.win_width - ball_coor[2]
 			self.ball.set_coords(ball_coor)
-			self.net.set_coords(net_coor)		
+			
+			#Update the score
+			self.pong.player2Points = int(split_msg[4])
+			self.pong.player1Points = int(split_msg[5])
+			self.pong.update_score()
 			
 	'''Extracts the floating point coordinates from delimited coordinates'''
 	def extract_coords(self, string_coord):
@@ -104,6 +116,7 @@ class PongClient():
 
 	'''Destroys the client'''
 	def destroy(self):
-		self.communicate_with_server('X')
+		if not self.rem_client_term:
+			self.communicate_with_server('X')
 		self.__client_socket.close()
 

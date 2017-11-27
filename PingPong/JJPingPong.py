@@ -2,9 +2,8 @@
 #Ping Pong Python Project
 
 import tkinter
-from tkinter import Frame, BOTH, Canvas, messagebox, Menu, IntVar
+from tkinter import Frame, BOTH, Canvas, messagebox, Menu, IntVar, StringVar
 from PongClient import PongClient
-
 
 class Pong(Frame):
     # DEFAULTS
@@ -62,8 +61,8 @@ class Pong(Frame):
     paddle2X_pos = 0
     paddle2Y_pos = 2
     
-    #Initialize the client
-    _client = None
+    _client = None #reference to PongClient for this Pong game
+    disp_ui_msg_time = 0 #keeps track of how long the current ui message has been displayed for
 
     def __init__(self, parent):
         # Inheriting from tk 
@@ -79,13 +78,34 @@ class Pong(Frame):
         self.player_count_radio.set(1)
         self.game_length_radio = IntVar()
         self.game_length_radio.set(7)
-        parent.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.setup_displayed_user_message()
+        parent.protocol("WM_DELETE_WINDOW", self.on_closing) #define window closing logic
 
-    '''Defines execution of logic on window close''' 
-    def on_closing(self):
+    '''Sets up support for displaying messages to the user'''
+    def setup_displayed_user_message(self):
+        self.curr_ui_msg_text = ''
+        self.user_message = None
+        self.user_message_text = StringVar()
+        self.user_message_text.trace('w', self.update_displayed_user_message)
+     
+    '''Tracks when the user message variable has been written to'''  
+    def update_displayed_user_message(self, *args):
+        if self.curr_ui_msg_text is not self.user_message_text.get():
+            self.curr_ui_msg_text = self.user_message_text.get()
+            self.disp_ui_msg_time = 0
+            self.canvas.delete(self.user_message)        
+            self.user_message = self.canvas.create_text(self.winWIDTH / 2, self.winHEIGHT - 15,
+                                                        text=self.user_message_text.get())
+
+    '''Checks status of client and terminates if it exists'''
+    def check_client_destroyed(self):
         if self._client:
             self._client.destroy()
             self._client = None
+            
+    '''Defines execution of logic on window close''' 
+    def on_closing(self):
+        self.check_client_destroyed()
         self.quit_pong()
             
     '''Destroys the active client and resets the game'''
@@ -219,7 +239,7 @@ class Pong(Frame):
                            ball_pos[3] + target_mid)
         # return info about what we did to caller for boolean or more nuanced comparison
         return target, target_pos[0], tuple([ball_pos[3] - target_mid, target_pos[2], ball_pos[3] + target_mid])
-    
+                    
     '''Resets game score'''
     def reset_score(self):
         self.player1Points = 0
@@ -345,6 +365,13 @@ class Pong(Frame):
         if self.is_auto():
             self._client.update_multiplayer_game_objects()
         
+        #remove ui message if displayed longer than ~5 seconds
+        if self.disp_ui_msg_time > 500 and self.user_message_text.get():
+            self.disp_ui_msg_time = 0
+            self.user_message_text.set('')
+        else:
+            self.disp_ui_msg_time += 1
+            
         # Set timer
         self.after(10, self.play)
 
@@ -474,8 +501,10 @@ class Pong(Frame):
             print("Number of human players is : {}".format(self.player_count))
         if self.player_count < 2:
             self.auto_player2 = True
+            self.check_client_destroyed()
         else:
-            self._client = PongClient(self)
+            if not self._client:                
+                self._client = PongClient(self)
             self.auto_player2 = False
 
     def build_menus(self, menu_bar, gameref):

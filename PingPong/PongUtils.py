@@ -5,7 +5,7 @@
 from threading import Thread
 
 '''Creates and runs new thread which executes the input function'''		
-def run_thread(func, func_args):
+def run_thread(func, func_args = ()):
 	Thread(target=func, args=func_args).start()
 
 '''Convert String to Byte array'''
