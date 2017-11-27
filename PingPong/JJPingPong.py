@@ -6,6 +6,10 @@ from tkinter import Frame, BOTH, Canvas, messagebox, Menu, IntVar, StringVar
 from PongClient import PongClient
 
 class Pong(Frame):
+    
+    WIN_MESSAGE = 'YOU WIN!!! NIIICEEE'
+    LOSS_MESSAGE = 'YOU LOST!!! HA HA'
+    
     # DEFAULTS
     net_enabled = False
     net = None
@@ -61,7 +65,7 @@ class Pong(Frame):
     paddle2X_pos = 0
     paddle2Y_pos = 2
     
-    _client = None #reference to PongClient for this Pong game
+    client = None #reference to PongClient for this Pong game
     disp_ui_msg_time = 0 #keeps track of how long the current ui message has been displayed for
 
     def __init__(self, parent):
@@ -79,7 +83,7 @@ class Pong(Frame):
         self.game_length_radio = IntVar()
         self.game_length_radio.set(7)
         self.setup_displayed_user_message()
-        parent.protocol("WM_DELETE_WINDOW", self.on_closing) #define window closing logic
+        parent.protocol("WM_DELETE_WINDOW", self.quit_pong) #define window closing logic
 
     '''Sets up support for displaying messages to the user'''
     def setup_displayed_user_message(self):
@@ -99,32 +103,28 @@ class Pong(Frame):
 
     '''Checks status of client and terminates if it exists'''
     def check_client_destroyed(self):
-        if self._client:
-            self._client.destroy()
-            self._client = None
-            
-    '''Defines execution of logic on window close''' 
-    def on_closing(self):
-        self.check_client_destroyed()
-        self.quit_pong()
+        if self.client:
+            self.client.destroy()
+            self.client = None
             
     '''Destroys the active client and resets the game'''
     def terminate_multiplayer(self):
-        if self._client:
-            self._client.destroy()
-        self._client = None
+        if self.client:
+            self.client.destroy()
+        self.client = None
         self.player_count_radio.set(1)
         self.reset_score()
 
+    '''Defines execution of logic on window close''' 
     def quit_pong(self):
-        # Exit fast
+        self.check_client_destroyed()
         self.parent.quit()
 
-    def game_over(self):
+    def game_over(self, disp_msg):
         self.canvas.delete(self.textLabel)
         self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, fill="RED", text="GAME OVER")
-        messagebox.showinfo(title="Game Over", message="Come back soon!")
-        self.parent.quit()
+        messagebox.showinfo(title="Game Over", message=disp_msg + "\nCome back soon!")
+        self.quit_pong()
 
     def on_keypress(self, event):
         global player1, player2
@@ -147,7 +147,7 @@ class Pong(Frame):
 
         # Quit Game
         if event.char == 'q':
-            self.parent.quit()
+            self.quit_pong()
 
     def start_gui(self, fullscreen):
         if fullscreen:
@@ -247,15 +247,26 @@ class Pong(Frame):
         self.canvas.coords(self.ball, self.ball_serve_pos1)
         self.update_score()
 
-    def update_score(self):
+    def update_score(self):         
         # Update Scoreboard
         self.canvas.delete(self.textLabel)
         self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, 
             text=str(self.player1Points) + " | " + str(self.player2Points))
-
+        
+        # Check for game over
+        if self.player1Points >= self.game_length:
+            if self.client:                   
+                self.client.communicate_with_server('W') #tells the server that this client won  
+            self.game_over(self.WIN_MESSAGE)
+            
+        # If player 2 won game over
+        if self.player2Points >= self.game_length:
+            if self.client:                   
+                self.client.communicate_with_server('L') #tells the server that this client lost
+            self.game_over(self.LOSS_MESSAGE)
 
     def is_auto(self):
-        return not self.auto_player2 and self._client
+        return not self.auto_player2 and self.client
 
     def play(self):
         # Move the ball
@@ -330,10 +341,6 @@ class Pong(Frame):
                 self.ballDX = -self.ballDX
                 self.reset_net()
 
-            # Check for game over
-            if self.player1Points == self.game_length:
-                self.game_over()
-
             self.update_score()
 
         # Player 2 Scored because ball passed left window edge
@@ -351,10 +358,6 @@ class Pong(Frame):
                 self.ballDX = -self.ballDX
                 self.reset_net()
 
-            # If player 2 won game over
-            if self.player2Points == self.game_length:
-                self.game_over()
-
             # Update Scoreboard
             self.canvas.delete(self.textLabel)
             self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10,
@@ -363,7 +366,7 @@ class Pong(Frame):
             self.check_for_net_contact()
             
         if self.is_auto():
-            self._client.update_multiplayer_game_objects()
+            self.client.update_multiplayer_game_objects()
         
         #remove ui message if displayed longer than ~5 seconds
         if self.disp_ui_msg_time > 500 and self.user_message_text.get():
@@ -503,8 +506,8 @@ class Pong(Frame):
             self.auto_player2 = True
             self.check_client_destroyed()
         else:
-            if not self._client:                
-                self._client = PongClient(self)
+            if not self.client:                
+                self.client = PongClient(self)
             self.auto_player2 = False
 
     def build_menus(self, menu_bar, gameref):
@@ -517,7 +520,7 @@ class Pong(Frame):
                                     command=gameref.change_player_count)
         player_menu.add_radiobutton(label='1 vs 1', variable=self.player_count_radio, value=2,
                                     command=gameref.change_player_count)
-        player_menu.add_command(label="Quit", command=gameref.quit_pong)
+        player_menu.add_command(label="Quit", command=self.quit_pong)
 
         paddlesize_menu.add_radiobutton(label='Small', variable=self.paddle_size_radio, value=1,
                                         command=gameref.change_paddle_size)

@@ -18,7 +18,10 @@ class PongServer():
 		self.__server_socket.listen(5) #means we are running, and can receive messages	
 		self.playerA_socket = None
 		self.playerB_socket = None
-		while True:		
+		self.listen_for_sockets()
+	
+	def listen_for_sockets(self):
+		while True:
 			client_socket, attr = self.__server_socket.accept() #accept new client_sockets
 			if not self.playerA_socket:
 				self.playerA_socket = client_socket
@@ -27,13 +30,12 @@ class PongServer():
 			elif not self.playerB_socket:
 				self.playerB_socket = client_socket
 				self.send_client_id(self.playerB_socket) #send id to player B socket
-			
 			if self.playerA_socket and self.playerB_socket:
 				utils.run_thread(self.recieve, (self.playerA_socket, self.playerB_socket)) #create listener threads
 				utils.run_thread(self.recieve, (self.playerB_socket, self.playerA_socket)) #create listener threads
 				self.playerA_socket = None
 				self.playerB_socket = None
-				
+	
 	'''Sends 'N' to player A socket, signifying that a player B has not joined the server yet'''
 	def wait_for_player_B_connection(self, playerA_socket, playerA_id):
 		while self.client_index <= playerA_id:			
@@ -53,11 +55,17 @@ class PongServer():
 	def recieve(self, playerA_socket, playerB_socket):	
 		while True:		
 			data = playerA_socket.recv(1024) # wait for PongClient to send data				
-			if data:
-				utils.run_thread(self.send, (playerB_socket, data))
-			if utils.bytes2string(data) is 'X':
-				break #terminate thread when the socket sends an 'X' indicating that the socket is beiong closed
 			
+			if data:
+				if utils.bytes2string(data) is 'W':
+					utils.run_thread(self.send, (playerB_socket, utils.string2bytes('L')))
+				elif utils.bytes2string(data) is 'L':
+					utils.run_thread(self.send, (playerB_socket, utils.string2bytes('W')))
+				else:
+					utils.run_thread(self.send, (playerB_socket, data))
+					if utils.bytes2string(data) is 'X':
+						break #terminate thread when the socket sends an 'X' indicating that the socket is beiong closed
+				
 	'''Sends bytes to the output socket'''
 	def send(self, playerB_socket, data):
 		playerB_socket.send(data)

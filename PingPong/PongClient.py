@@ -27,7 +27,7 @@ class Game_Object():
 
 '''Handles the client side calls for a pong game'''
 class PongClient():
-		
+
 	conn_est = False #checks if connection has been established with remote client
 	rem_client_term = False #checks if remote client disconnected from server
 	
@@ -57,6 +57,7 @@ class PongClient():
 
 	'''Reset ball position and score for new game since connection was established'''
 	def reset_ui_for_new_game(self):
+		self.pong.user_message_text.set('Connected to Remote Client!')
 		self.pong.reset_score()
 		self.conn_est = True
 		
@@ -70,14 +71,19 @@ class PongClient():
 		lead_byte = split_msg[0] #get the leading byte of the message
 		if lead_byte is 'N': #if the lead byte is an 'N' this indicates that there is no corresponding client
 			self.pong.user_message_text.set('Connection established, wating for remote client to start multiplayer game...')
-			self.pong.chase_ball(self.paddle2.rect)			
+			self.pong.chase_ball(self.paddle2.rect)		
 		elif lead_byte is 'X': #if the lead byte is an 'X' this indicates that the corresponding client has lef thte game
 			self.rem_client_term = True
 			self.pong.user_message_text.set('Remote client has disconnected, restarting single player...')
 			self.pong.terminate_multiplayer()
+		#in context of this client, game over conditions 'W' (win) or 'L' (loss) is received
+		#ex; recieved a 'W' meaning this client won!
+		elif lead_byte is 'W': 
+			self.pong.game_over(self.pong.WIN_MESSAGE)
+		elif lead_byte is 'L':
+			self.pong.game_over(self.pong.LOSS_MESSAGE)
 		else:
 			if not self.conn_est:
-					self.pong.user_message_text.set('Connected to Remote Client!')
 					self.reset_ui_for_new_game()
 			self.update_game_object_via_client_data(split_msg)
 	
@@ -103,7 +109,7 @@ class PongClient():
 			#Update the score
 			self.pong.player2Points = int(split_msg[4])
 			self.pong.player1Points = int(split_msg[5])
-			self.pong.update_score()
+			#self.pong.update_score()
 			
 	'''Extracts the floating point coordinates from delimited coordinates'''
 	def extract_coords(self, string_coord):
@@ -112,7 +118,7 @@ class PongClient():
 	'''Send data to the server'''
 	def communicate_with_server(self, str_data):
 		self.__client_socket.send(utils.string2bytes(str_data))  # waits to receive str_data from server
-		return  utils.bytes2string(self.__client_socket.recv(1024))  # waits to receive str_data from server
+		return  utils.bytes2string(self.__client_socket.recv(1024))  # waits to receive str_data from server		
 
 	'''Destroys the client'''
 	def destroy(self):
