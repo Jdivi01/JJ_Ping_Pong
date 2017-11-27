@@ -43,7 +43,7 @@ class Pong(Frame):
     # DEV PROFILE
     paddle_size = 50
     auto_player2 = False
-    game_length = 21
+    game_length = 7
 
     # Ball
     ball_serve_pos1 = (100, 200, 110, 210)
