@@ -46,6 +46,7 @@ class PongServer():
 		client_socket.send(utils.string2bytes(str(self.client_index)))
 		self.client_index += 1
 	
+	'''Setup protocol for receiving data from socket A to socket B'''
 	def recieve(self, playerA_socket, playerB_socket):		
 		try:			
 			while True:			
