@@ -56,7 +56,7 @@ class PongClient():
 	def reset_ui_for_new_game(self):
 		self.pong.player1Points = 0
 		self.pong.player2Points = 0
-		self.canvas.coords(self.pong.ball, self.pong.ball_serve_pos1)
+		self.pong.canvas.coords(self.pong.ball, self.pong.ball_serve_pos1)
 		self.pong.update_score()
 		self.conn_est = True
 		
