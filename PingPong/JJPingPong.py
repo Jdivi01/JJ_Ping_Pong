@@ -79,6 +79,22 @@ class Pong(Frame):
         self.player_count_radio.set(1)
         self.game_length_radio = IntVar()
         self.game_length_radio.set(7)
+        parent.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    '''Defines execution of logic on window close''' 
+    def on_closing(self):
+        if self._client:
+            self._client.destroy()
+            self._client = None
+        self.quit_pong()
+            
+    '''Destroys the active client and resets the game'''
+    def terminate_multiplayer(self):
+        if self._client:
+            self._client.destroy()
+        self._client = None
+        self.player_count_radio.set(1)
+        self.reset_score()
 
     def quit_pong(self):
         # Exit fast

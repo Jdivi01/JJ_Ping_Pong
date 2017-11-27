@@ -50,9 +50,11 @@ class PongServer():
 	def recieve(self, playerA_socket, playerB_socket):		
 		try:			
 			while True:			
-				data = playerA_socket.recv(1024) # wait for PongClient to send data
+				data = playerA_socket.recv(1024) # wait for PongClient to send data				
 				if data:
 					utils.run_thread(self.send, (playerB_socket, data))
+				if utils.bytes2string(data) is 'X':
+					break #terminate thread when the socket sends an 'X' indicating that the socket is beiong closed
 		except ConnectionResetError:
 			return
 			

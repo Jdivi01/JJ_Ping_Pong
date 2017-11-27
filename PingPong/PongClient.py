@@ -68,6 +68,8 @@ class PongClient():
 		lead_byte = split_msg[0] #get the leading byte of the message
 		if lead_byte is 'N': #if the lead byte is an 'N' this indicates that there is no corresponding client
 			self.pong.chase_ball(self.paddle2.rect)
+		elif lead_byte is 'X': #if the lead byte is an 'X' this indicates that the corresponding client has lef thte game
+			self.pong.terminate_multiplayer()
 		else:
 			if not self.conn_est:
 					self.reset_ui_for_new_game()
@@ -96,11 +98,12 @@ class PongClient():
 		return [float(disp) for disp in string_coord.split(':')]
 	
 	'''Send data to the server'''
-	def communicate_with_server(self, data):
-		self.__client_socket.send(utils.string2bytes(data))  # waits to receive data from server
-		return  utils.bytes2string(self.__client_socket.recv(1024))  # waits to receive data from server
+	def communicate_with_server(self, str_data):
+		self.__client_socket.send(utils.string2bytes(str_data))  # waits to receive str_data from server
+		return  utils.bytes2string(self.__client_socket.recv(1024))  # waits to receive str_data from server
 
 	'''Destroys the client'''
 	def destroy(self):
+		self.communicate_with_server('X')
 		self.__client_socket.close()
 
