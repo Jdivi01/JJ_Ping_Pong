@@ -1,4 +1,7 @@
-''''Utility class for common logic'''
+#Author: Joe Bender
+#Date: 11/26/17
+
+''''Utilities for common logic'''
 from threading import Thread
 
 '''Creates and runs new thread which excecutes the input function'''		

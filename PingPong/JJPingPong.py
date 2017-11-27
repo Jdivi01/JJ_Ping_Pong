@@ -3,6 +3,7 @@
 
 import tkinter
 from tkinter import Frame, BOTH, Canvas, messagebox, Menu, IntVar
+from PongClient import PongClient
 
 
 class Pong(Frame):
@@ -60,6 +61,9 @@ class Pong(Frame):
     paddle1Y_pos = 2
     paddle2X_pos = 0
     paddle2Y_pos = 2
+    
+    #Initialize the client
+    _client = None
 
     def __init__(self, parent):
         # Inheriting from tk 
@@ -200,6 +204,12 @@ class Pong(Frame):
         # return info about what we did to caller for boolean or more nuanced comparison
         return target, target_pos[0], tuple([ball_pos[3] - target_mid, target_pos[2], ball_pos[3] + target_mid])
 
+    def update_score(self):
+        # Update Scoreboard
+        self.canvas.delete(self.textLabel)
+        self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, 
+            text=str(self.player1Points) + " | " + str(self.player2Points))
+
     def play(self):
         # Move the ball
         self.canvas.move(self.ball, self.ballDX * self.ball_speed_factor, self.ballDY * self.ball_speed_factor)
@@ -277,10 +287,7 @@ class Pong(Frame):
             if self.player1Points == self.game_length:
                 self.game_over()
 
-            # Update Scoreboard
-            self.canvas.delete(self.textLabel)
-            self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10,
-                                                     text=str(self.player1Points) + " | " + str(self.player2Points))
+            self.update_score()
 
         # Player 2 Scored because ball passed left window edge
         if self.canvas.coords(self.ball)[0] <= 0:
@@ -307,6 +314,10 @@ class Pong(Frame):
                                                      text=str(self.player1Points) + " | " + str(self.player2Points))
         if self.net_enabled:
             self.check_for_net_contact()
+            
+        if not self.auto_player2 and self._client:
+            self._client.update_multiplayer_game_objects()
+        
         # Set timer
         self.after(10, self.play)
 
@@ -437,6 +448,10 @@ class Pong(Frame):
         if self.player_count < 2:
             self.auto_player2 = True
         else:
+            self._client = PongClient(self)
+            self.player1Points = 0
+            self.player2Points = 0
+            self.update_score()
             self.auto_player2 = False
 
     def build_menus(self, menu_bar, gameref):
