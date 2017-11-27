@@ -76,7 +76,7 @@ class Pong(Frame):
         self.paddle_size_radio = IntVar()
         self.paddle_size_radio.set(1)
         self.player_count_radio = IntVar()
-        self.player_count_radio.set(2)
+        self.player_count_radio.set(1)
         self.game_length_radio = IntVar()
         self.game_length_radio.set(7)
 
