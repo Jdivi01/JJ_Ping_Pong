@@ -4,7 +4,7 @@
 ''''Utilities for common logic'''
 from threading import Thread
 
-'''Creates and runs new thread which excecutes the input function'''		
+'''Creates and runs new thread which executes the input function'''		
 def run_thread(func, func_args):
 	Thread(target=func, args=func_args).start()
 

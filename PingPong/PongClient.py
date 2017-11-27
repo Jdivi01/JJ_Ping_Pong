@@ -28,6 +28,9 @@ class Game_Object():
 '''Handles the client side calls for a pong game'''
 class PongClient():
 		
+		
+	conn_est = False
+	
 	'''Initializes the client, establishes communication with the server'''
 	def __init__(self, pong):
 		server_addr = ('localhost', 13000)  # connect to the local host
@@ -39,6 +42,7 @@ class PongClient():
 		self.paddle2 = Game_Object(pong.paddle2, pong.canvas)
 		self.net = Game_Object(pong.net, pong.canvas)
 		self.win_width = pong.winWIDTH
+		self.pong = pong
 		
 	'''Polls server for client id'''
 	def get_client_id(self):
@@ -48,28 +52,39 @@ class PongClient():
 	def compile_pong_message(self):
 		return '%d %s %s %s' % (self.client_id, self.paddle1.parse_coords(), self.ball.parse_coords(), self.net.parse_coords())
 
+	'''Reset ball position and score for new game since connection was established'''
+	def reset_ui_for_new_game(self):
+		self.pong.player1Points = 0
+		self.pong.player2Points = 0
+		self.canvas.coords(self.pong.ball, self.pong.ball_serve_pos1)
+		self.pong.update_score()
+		self.conn_est = True
+		
 	'''Updates the game objects based on the messages sent/received 
 	from the server and corresponding PongClient'''
 	def update_multiplayer_game_objects(self):
 		data_msg = self.compile_pong_message()
 		data = self.communicate_with_server(data_msg)
 		split_msg = data.split(' ')
-		client_id = int(split_msg[0]) #get the received client id
-		paddle_coor = self.extract_coords(split_msg[1]) #get the received paddle coords
-		paddle2_coor = self.paddle2.get_coords()
-		paddle2_coor[1] = paddle_coor[1]
-		paddle2_coor[3] = paddle_coor[3]
-		self.paddle2.set_coords(paddle2_coor)
-		#only update the ball and net values for the newer client
-		#this makes the older client be the driver for ball and net values and nothing else
-		if client_id > self.client_id:
-			ball_coor = self.extract_coords(split_msg[2]) #get the received ball coords
-			net_coor = self.extract_coords(split_msg[3]) #get the received net coords
-			#invert the ball position to make both user experience similar visuals
-			ball_coor[0] = self.win_width - ball_coor[0] 
-			ball_coor[2] = self.win_width - ball_coor[2]
-			self.ball.set_coords(ball_coor)
-			self.net.set_coords(net_coor)
+		lead_byte = split_msg[0] #get the leading byte of the message
+		if lead_byte is not 'N':
+			if not self.conn_est:
+				self.reset_ui_for_new_game()
+			paddle_coor = self.extract_coords(split_msg[1]) #get the received paddle coords
+			paddle2_coor = self.paddle2.get_coords()
+			paddle2_coor[1] = paddle_coor[1]
+			paddle2_coor[3] = paddle_coor[3]
+			self.paddle2.set_coords(paddle2_coor)
+			#only update the ball and net values for the newer client
+			#this makes the older client be the driver for ball and net values and nothing else
+			if int(lead_byte) > self.client_id:
+				ball_coor = self.extract_coords(split_msg[2]) #get the received ball coords
+				net_coor = self.extract_coords(split_msg[3]) #get the received net coords
+				#invert the ball position to make both user experience similar visuals
+				ball_coor[0] = self.win_width - ball_coor[0] 
+				ball_coor[2] = self.win_width - ball_coor[2]
+				self.ball.set_coords(ball_coor)
+				self.net.set_coords(net_coor)
 			
 	'''Extracts the floating point coordinates from delimited coordinates'''
 	def extract_coords(self, string_coord):

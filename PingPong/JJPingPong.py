@@ -210,6 +210,10 @@ class Pong(Frame):
         self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, 
             text=str(self.player1Points) + " | " + str(self.player2Points))
 
+
+    def is_auto(self):
+        return not self.auto_player2 and self._client
+
     def play(self):
         # Move the ball
         self.canvas.move(self.ball, self.ballDX * self.ball_speed_factor, self.ballDY * self.ball_speed_factor)
@@ -219,7 +223,7 @@ class Pong(Frame):
             self.canvas.move(self.net, 0, self.netDY * self.net_speed)
 
         # Automated Paddle Movement Logic (Computer)
-        if self.auto_player2:
+        if not self.is_auto():
             self.chase_ball(self.paddle2)
 
         # Manage ball
@@ -315,7 +319,7 @@ class Pong(Frame):
         if self.net_enabled:
             self.check_for_net_contact()
             
-        if not self.auto_player2 and self._client:
+        if self.is_auto():
             self._client.update_multiplayer_game_objects()
         
         # Set timer
@@ -449,9 +453,6 @@ class Pong(Frame):
             self.auto_player2 = True
         else:
             self._client = PongClient(self)
-            self.player1Points = 0
-            self.player2Points = 0
-            self.update_score()
             self.auto_player2 = False
 
     def build_menus(self, menu_bar, gameref):
@@ -497,7 +498,7 @@ def main():
     root = tkinter.Tk()
     gameref = Pong(root)
     root.geometry("800x400+300+200")
-
+    
     # Setup Menu
     menu_bar = Menu(root)
     gameref.build_menus(menu_bar, gameref)

@@ -23,6 +23,7 @@ class PongServer():
 			if not playerA_socket:
 				playerA_socket = client_socket
 				self.send_client_id(playerA_socket) #send id to player A socket
+				utils.run_thread(self.wait_for_player_B_connection, (playerA_socket, self.client_index)) #create listener threads
 			elif not playerB_socket:
 				playerB_socket = client_socket
 				self.send_client_id(playerB_socket) #send id to player B socket
@@ -32,7 +33,15 @@ class PongServer():
 				utils.run_thread(self.recieve, (playerB_socket, playerA_socket)) #create listener threads
 				playerA_socket = None
 				playerB_socket = None
+				
+	'''Sends 'N' to player A socket, signifying that a player B has not joined the server yet'''
+	def wait_for_player_B_connection(self, playerA_socket, playerA_id):
+		while self.client_index <= playerA_id:			
+				data = playerA_socket.recv(1024) # wait for PongClient to send data
+				if data:
+					playerA_socket.send(utils.string2bytes('N'))
 	
+	'''Sends the client id to the socket'''
 	def send_client_id(self, client_socket):
 		client_socket.send(utils.string2bytes(str(self.client_index)))
 		self.client_index += 1
