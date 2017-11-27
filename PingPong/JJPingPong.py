@@ -331,7 +331,7 @@ class Pong(Frame):
             # Bounce
             self.ballDX = -self.ballDX
             self.player1Points += 1  # PLayer 1 Scored
-            print("SCORE!: Player 1 scored : {} points".format(self.player1Points))
+            self.user_message_text.set("SCORE!: Player 1 scored : {} points".format(self.player1Points))
             # Reset moving net object after score
             if self.net_enabled:
                 # get in serve position
@@ -348,7 +348,7 @@ class Pong(Frame):
             # Bounce
             self.ballDX = -self.ballDX
             self.player2Points += 1
-            print("SCORE!: Player 2 scored : {} points".format(self.player2Points))
+            self.user_message_text.set("SCORE!: Player 2 scored : {} points".format(self.player2Points))
             # Reset moving net object after score
             if self.net_enabled:
                 # get in serve position
@@ -473,8 +473,7 @@ class Pong(Frame):
 
     def change_paddle_size(self):
         self.paddle_size_factor = self.paddle_size_radio.get()
-        if self.verbose:
-            print("Paddle Size is  : {}".format(self.paddle_size_factor * self.paddle_size))
+        self.user_message_text.set("Paddle Size is now: {} pixels".format(self.paddle_size_factor * self.paddle_size))
         paddle1_loc = self.canvas.coords(self.paddle1)
         self.canvas.coords(self.paddle1,
                            paddle1_loc[0],
@@ -490,18 +489,15 @@ class Pong(Frame):
 
     def change_ball_speed(self):
         self.ball_speed_factor = self.ball_speed_radio.get()
-        if self.verbose:
-            print("Ball speed is set to: {}".format(self.ball_speed_factor))
+        self.user_message_text.set("Ball speed is now: {}X".format(self.ball_speed_factor))
 
     def change_game_length(self):
         self.game_length = self.game_length_radio.get()
-        if self.verbose:
-            print("Game length is : {} points".format(self.game_length))
+        self.user_message_text.set("Game length is now: {} points".format(self.game_length))
 
     def change_player_count(self):
         self.player_count = self.player_count_radio.get()
-        if self.verbose:
-            print("Number of human players is : {}".format(self.player_count))
+        self.user_message_text.set("Number of human players is now: {}".format(self.player_count))
         if self.player_count < 2:
             self.auto_player2 = True
             self.check_client_destroyed()
