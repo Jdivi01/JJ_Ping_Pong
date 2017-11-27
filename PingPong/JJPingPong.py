@@ -203,6 +203,13 @@ class Pong(Frame):
                            ball_pos[3] + target_mid)
         # return info about what we did to caller for boolean or more nuanced comparison
         return target, target_pos[0], tuple([ball_pos[3] - target_mid, target_pos[2], ball_pos[3] + target_mid])
+    
+    '''Resets game score'''
+    def reset_score(self):
+        self.player1Points = 0
+        self.player2Points = 0
+        self.canvas.coords(self.ball, self.ball_serve_pos1)
+        self.update_score()
 
     def update_score(self):
         # Update Scoreboard
