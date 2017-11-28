@@ -70,7 +70,8 @@ class PongClient():
 		split_msg = data.split(' ')
 		lead_byte = split_msg[0] #get the leading byte of the message
 		if lead_byte is 'N': #if the lead byte is an 'N' this indicates that there is no corresponding client
-			self.pong.user_message_text.set('Connection established, waiting for remote client to start multiplayer game...')
+			if not self.conn_est: #only post connection message if it has not good been established
+				self.pong.user_message_text.set('Connection established, waiting for remote client to start multiplayer game...')
 			self.pong.chase_ball(self.paddle2.rect)		
 		elif lead_byte is 'X': #if the lead byte is an 'X' this indicates that the corresponding client has lef thte game
 			self.rem_client_term = True

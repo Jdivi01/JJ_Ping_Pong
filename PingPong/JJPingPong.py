@@ -89,7 +89,7 @@ class Pong(Frame):
      
     '''Tracks when the user message variable has been written to'''  
     def update_displayed_user_message(self, *args):
-        if self.curr_ui_msg_text is not self.user_message_text.get():
+        if not self.curr_ui_msg_text == self.user_message_text.get():
             self.curr_ui_msg_text = self.user_message_text.get()
             self.disp_ui_msg_time = 0
             self.canvas.delete(self.user_message)  
