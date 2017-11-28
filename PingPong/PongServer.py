@@ -8,21 +8,26 @@ import PongUtils as utils
 '''Sets up the server for multi-player pong'''
 class PongServer():
 	
+	'''Giving credit where due: 
+	https://stackoverflow.com/questions/33434007/python-socket-send-receive-messages-at-the-same-time
+	Used to figure out simultaneous send/receive on same socket using threads'''
+	
 	client_index = 0 #used to id sockets
 	
 	'''Starts the server'''
 	def __init__(self):
 		server_addr = ('localhost', 13000) #host server (locally)
-		self.__server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #use TCP protocol
-		self.__server_socket.bind(server_addr)
-		self.__server_socket.listen(5) #means we are running, and can receive messages	
+		self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #use TCP protocol
+		self.server_socket.bind(server_addr)
+		self.server_socket.listen(5) #means we are running, and can receive messages	
 		self.playerA_socket = None
 		self.playerB_socket = None
 		self.listen_for_sockets()
 	
+	'''Constant polling for sockets, connects pairs to form connection for Pong game'''
 	def listen_for_sockets(self):
 		while True:
-			client_socket, attr = self.__server_socket.accept() #accept new client_sockets
+			client_socket, attr = self.server_socket.accept() #accept new client_sockets
 			if not self.playerA_socket:
 				self.playerA_socket = client_socket
 				self.send_client_id(self.playerA_socket) #send id to player A socket
@@ -72,7 +77,7 @@ class PongServer():
 			
 	'''Closes the server's socket'''
 	def destroy(self):
-		self.__sever_socket.close()
+		self.server_socket.close()
 	
 if __name__ == '__main__':
 	server = PongServer()
