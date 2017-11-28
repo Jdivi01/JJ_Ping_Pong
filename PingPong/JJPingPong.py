@@ -28,21 +28,17 @@ class Pong(Frame):
         self.player1 = None
         self.player2 = None
         self.canvas = None
+        self.score = None
         self.winHEIGHT = 0
         self.winWIDTH = 0
         self.paddleSpeed = 15
-        self.player1Points = 0
-        self.player2Points = 0
         self.textLabel = 0
 
         # CURRENT SETTINGS
         self.fullscreen = False
         self.net_enabled = True
         self.verbose = False
-        self.paddle_size = 50
-        self.game_length = 7
-
-                 
+        self.paddle_size = 50             
                     
         # Default factors to 1
         self.ballSpeed = 1
@@ -71,7 +67,6 @@ class Pong(Frame):
         # Inheriting from tk 
         Frame.__init__(self, parent)
         self.parent = parent
-        self.start_gui(fullscreen=False)
         # Set up radio buttons
         self.ball_speed_radio = IntVar()
         self.ball_speed_radio.set(1)
@@ -83,6 +78,7 @@ class Pong(Frame):
         self.game_length_radio.set(7)
         self.setup_displayed_user_message()
         parent.protocol("WM_DELETE_WINDOW", self.quit_pong) #define window closing logic
+        self.start_gui(fullscreen=False)
 
     '''Sets up support for displaying messages to the user'''
     def setup_displayed_user_message(self):
@@ -96,7 +92,7 @@ class Pong(Frame):
         if self.curr_ui_msg_text is not self.user_message_text.get():
             self.curr_ui_msg_text = self.user_message_text.get()
             self.disp_ui_msg_time = 0
-            self.canvas.delete(self.user_message)        
+            self.canvas.delete(self.user_message)  
             self.user_message = self.canvas.create_text(self.winWIDTH / 2, self.winHEIGHT - 15,
                                                         text=self.user_message_text.get())
 
@@ -122,7 +118,8 @@ class Pong(Frame):
     def game_over(self, disp_msg):
         self.canvas.delete(self.textLabel)
         self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, fill="RED", text="GAME OVER")
-        messagebox.showinfo(title="Game Over", message=disp_msg + "\nCome back soon!")
+        score_readout = "\nFinal Score: %d to %d" % (self.score.player1_score, self.score.player2_score)
+        messagebox.showinfo(title="Game Over", message=disp_msg + score_readout + "\nCome back soon!")
         self.quit_pong()
 
     def on_keypress(self, event):
@@ -162,6 +159,8 @@ class Pong(Frame):
         self.pack(fill=BOTH, expand=1)
         self.canvas = Canvas(self, bg="white")
         self.canvas.pack(fill=BOTH, expand=1)
+        # Create Scoreboard and save ref
+        self.score = Score(self.canvas, self.winWIDTH, self.game_length_radio)
 
         # Create Ball and save ref
         self.ball = self.canvas.create_oval(0 + self.ballX_pos,
@@ -191,10 +190,7 @@ class Pong(Frame):
                                                 self.net_height + self.netY,
                                                 outline="black",
                                                 fill="black")
-        # Create Scoreboard and save ref
-        self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10,
-                                                 text=str(self.player1Points) + " | " + str(self.player2Points))
-        # Link key press event to on_keypress() callback method
+        
         self.parent.bind("<Key>", self.on_keypress)
         self.canvas.pack(fill=BOTH, expand=1)
         # Set timer
@@ -241,25 +237,19 @@ class Pong(Frame):
                     
     '''Resets game score'''
     def reset_score(self):
-        self.player1Points = 0
-        self.player2Points = 0
+        self.score.set_score(0, 0)
         self.canvas.coords(self.ball, self.ball_serve_pos1)
-        self.update_score()
+        self.check_for_winner()
 
-    def update_score(self):         
-        # Update Scoreboard
-        self.canvas.delete(self.textLabel)
-        self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, 
-            text=str(self.player1Points) + " | " + str(self.player2Points))
-        
+    def check_for_winner(self):        
         # Check for game over
-        if self.player1Points >= self.game_length:
+        if self.score.is_player1_winner():
             if self.client:                   
                 self.client.communicate_with_server('W') #tells the server that this client won  
             self.game_over(self.WIN_MESSAGE)
             
         # If player 2 won game over
-        if self.player2Points >= self.game_length:
+        if self.score.is_player2_winner():
             if self.client:                   
                 self.client.communicate_with_server('L') #tells the server that this client lost
             self.game_over(self.LOSS_MESSAGE)
@@ -329,8 +319,8 @@ class Pong(Frame):
         if self.canvas.coords(self.ball)[2] >= self.winWIDTH:
             # Bounce
             self.ballDX = -self.ballDX
-            self.player1Points += 1  # PLayer 1 Scored
-            self.user_message_text.set("SCORE!: Player 1 scored : {} points".format(self.player1Points))
+            self.score.player1_scored() # PLayer 1 Scored
+            self.user_message_text.set("SCORE!: Player 1 scored!")
             # Reset moving net object after score
             if self.net_enabled:
                 # get in serve position
@@ -340,14 +330,14 @@ class Pong(Frame):
                 self.ballDX = -self.ballDX
                 self.reset_net()
 
-            self.update_score()
+            self.check_for_winner()
 
         # Player 2 Scored because ball passed left window edge
         if self.canvas.coords(self.ball)[0] <= 0:
             # Bounce
             self.ballDX = -self.ballDX
-            self.player2Points += 1
-            self.user_message_text.set("SCORE!: Player 2 scored : {} points".format(self.player2Points))
+            self.score.player2_scored()  # PLayer 2 Scored
+            self.user_message_text.set("Player 2 scored!")
             # Reset moving net object after score
             if self.net_enabled:
                 # get in serve position
@@ -357,10 +347,6 @@ class Pong(Frame):
                 self.ballDX = -self.ballDX
                 self.reset_net()
 
-            # Update Scoreboard
-            self.canvas.delete(self.textLabel)
-            self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10,
-                                                     text=str(self.player1Points) + " | " + str(self.player2Points))
         if self.net_enabled:
             self.check_for_net_contact()
             
@@ -374,6 +360,8 @@ class Pong(Frame):
         else:
             self.disp_ui_msg_time += 1
             
+        self.check_for_winner()
+                
         # Set timer
         self.after(10, self.play)
 
@@ -491,19 +479,25 @@ class Pong(Frame):
         self.user_message_text.set("Ball speed is now: {}X".format(self.ball_speed_factor))
 
     def change_game_length(self):
-        self.game_length = self.game_length_radio.get()
-        self.user_message_text.set("Game length is now: {} points".format(self.game_length))
+        game_length = self.game_length_radio.get()
+        self.user_message_text.set("Game length is now: {} points".format(game_length))
 
     def change_player_count(self):
         self.player_count = self.player_count_radio.get()
-        self.user_message_text.set("Number of human players is now: {}".format(self.player_count))
         if self.player_count < 2:
             self.auto_player2 = True
             self.check_client_destroyed()
         else:
-            if not self.client:                
-                self.client = PongClient(self)
+            if not self.client:
+                #handle connection issues if needed
+                try:              
+                    self.client = PongClient(self)
+                except ConnectionError:
+                    self.player_count_radio.set(1) #reset the radio value and alert user via message
+                    self.user_message_text.set("Failed to connect to host server, it may not be active!")
+                    return
             self.auto_player2 = False
+        self.user_message_text.set("Number of human players is now: {}".format(self.player_count))
 
     def build_menus(self, menu_bar, gameref):
         player_menu = Menu(menu_bar, tearoff=0)
@@ -543,12 +537,59 @@ class Pong(Frame):
         menu_bar.add_cascade(label="Paddle Size", menu=paddlesize_menu)
         menu_bar.add_cascade(label="Ball Speed", menu=ballspeed_menu)
 
+'''Controls the score keeping of the game'''
+class Score():
+    
+    '''Initializes the score'''
+    def __init__(self, canvas, winWIDTH, game_length_var):
+        self.canvas = canvas
+        self.player1_score = 0
+        self.player2_score = 0
+        self.window_width = winWIDTH
+        self.score_label = None
+        self.game_length_var = game_length_var
+        self.update_score_text()
+      
+    '''Sets the current score'''  
+    def set_score(self, player1_score, player2_score):
+        if player1_score is not self.player1_score:
+            self.player1_score = player1_score
+            self.update_score_text()
+        if player2_score is not self.player2_score:
+            self.player2_score = player2_score
+            self.update_score_text()
+            
+    '''Updates the tkinter text in the ui'''       
+    def update_score_text(self):
+        # Update Scoreboard
+        self.canvas.delete(self.score_label)
+        self.score_label = self.canvas.create_text(self.window_width / 2, 10, #places the label in the center
+            text=str(self.player1_score) + " | " + str(self.player2_score))
+
+    '''Increments player 2's score'''
+    def player1_scored(self):
+        self.player1_score += 1
+        self.update_score_text()
+    
+    '''Increments player 1's score'''
+    def player2_scored(self):
+        self.player2_score += 1
+        self.update_score_text()
+    
+    
+    '''Asks if player 1 has won the game'''
+    def is_player1_winner(self):
+        return self.player1_score >= self.game_length_var.get()
+    
+    '''Asks if player 1 has won the game'''
+    def is_player2_winner(self):
+        return self.player2_score >= self.game_length_var.get()
 
 def main():
     root = tkinter.Tk()
     gameref = Pong(root)
     root.geometry("800x400+300+200")
-    
+
     # Setup Menu
     menu_bar = Menu(root)
     gameref.build_menus(menu_bar, gameref)

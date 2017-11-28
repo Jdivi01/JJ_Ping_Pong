@@ -53,7 +53,7 @@ class PongClient():
 	def compile_pong_message(self):
 		return '%d %s %s %s %d %d' % (self.client_id, self.paddle1.parse_coords(), 
 									self.net.parse_coords(), self.ball.parse_coords(), 
-									self.pong.player1Points, self.pong.player2Points)
+									self.pong.score.player1_score, self.pong.score.player2_score)
 
 	'''Reset ball position and score for new game since connection was established'''
 	def reset_ui_for_new_game(self):
@@ -107,9 +107,7 @@ class PongClient():
 			self.ball.set_coords(ball_coor)
 			
 			#Update the score
-			self.pong.player2Points = int(split_msg[4])
-			self.pong.player1Points = int(split_msg[5])
-			#self.pong.update_score()
+			self.pong.score.set_score(int(split_msg[5]), int(split_msg[4]))
 			
 	'''Extracts the floating point coordinates from delimited coordinates'''
 	def extract_coords(self, string_coord):
