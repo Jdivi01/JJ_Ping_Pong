@@ -6,69 +6,68 @@ from tkinter import Frame, BOTH, Canvas, messagebox, Menu, IntVar, StringVar
 from PongClient import PongClient
 
 class Pong(Frame):
-    
-    WIN_MESSAGE = 'YOU WIN!!! NIIICEEE'
-    LOSS_MESSAGE = 'YOU LOST!!! HA HA'
-    
-    # DEFAULTS
-    net_enabled = False
-    net = None
-    netX = 800 / 2
-    netY = 400 / 2
-    netDY = 1
-    net_touch_count = 0
-    net_height = 75
-    net_size_increment = 20
-    net_max_size = 250
-    net_speed = 1
-    player1 = None
-    player2 = None
-    canvas = None
-    winHEIGHT = 0
-    winWIDTH = 0
-    paddleSpeed = 50
-    player1Points = 0
-    player2Points = 0
-    textLabel = 0
-
-    # CURRENT SETTINGS
-    fullscreen = False
-    net_enabled = True
-    verbose = False
-
-    ballSpeed = 1
-    paddle_size = 50
-    # Default factors to 1
-    paddle_size_factor = 1
-    ball_speed_factor = 1
-    player_count = 1
-
-    # DEV PROFILE
-    paddle_size = 50
-    auto_player2 = False
-    game_length = 7
-
-    # Ball
-    ball_serve_pos1 = (100, 200, 110, 210)
-    ball_serve_pos2 = (700, 200, 710, 210)
-    ballX_pos = 50  # Starting X pos of ball
-    ballY_pos = 50  # Starting Y pos of ball
-    ball = None
-    ballDX = 2
-    ballDY = -2
-
-    # Paddle
-    paddle1 = None
-    paddle2 = None
-    paddle1X_pos = 2
-    paddle1Y_pos = 2
-    paddle2X_pos = 0
-    paddle2Y_pos = 2
-    
-    client = None #reference to PongClient for this Pong game
-    disp_ui_msg_time = 0 #keeps track of how long the current ui message has been displayed for
 
     def __init__(self, parent):
+        self.WIN_MESSAGE = 'YOU WIN!!! NIIICEEE'
+        self.LOSS_MESSAGE = 'YOU LOST!!! HA HA'
+    
+        self.client = None #reference to PongClient for this Pong game
+        self.disp_ui_msg_time = 0 #keeps track of how long the current ui message has been displayed for
+        
+        # DEFAULTS
+        self.net_enabled = False
+        self.net = None
+        self.netX = 800 / 2
+        self.netY = 400 / 2
+        self.netDY = 1
+        self.net_touch_count = 0
+        self.net_height = 75
+        self.net_size_increment = 20
+        self.net_max_size = 250
+        self.net_speed = 1
+        self.player1 = None
+        self.player2 = None
+        self.canvas = None
+        self.winHEIGHT = 0
+        self.winWIDTH = 0
+        self.paddleSpeed = 15
+        self.player1Points = 0
+        self.player2Points = 0
+        self.textLabel = 0
+
+        # CURRENT SETTINGS
+        self.fullscreen = False
+        self.net_enabled = True
+        self.verbose = False
+        self.paddle_size = 50
+        self.game_length = 7
+
+                 
+                    
+        # Default factors to 1
+        self.ballSpeed = 1
+        self.paddle_size_factor = 1
+        self.ball_speed_factor = 1
+        self.player_count = 1
+        self.auto_player2 = False
+
+        # Ball
+        self.ball_serve_pos1 = (100, 200, 110, 210)
+        self.ball_serve_pos2 = (700, 200, 710, 210)
+        self.ballX_pos = 50  # Starting X pos of ball
+        self.ballY_pos = 50  # Starting Y pos of ball
+        self.ball = None
+        self.ballDX = 2
+        self.ballDY = -2
+
+        # Paddle
+        self.paddle1 = None
+        self.paddle2 = None
+        self.paddle1X_pos = 2
+        self.paddle1Y_pos = 2
+        self.paddle2X_pos = 0
+        self.paddle2Y_pos = 2
+        
         # Inheriting from tk 
         Frame.__init__(self, parent)
         self.parent = parent
