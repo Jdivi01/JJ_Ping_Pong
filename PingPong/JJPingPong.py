@@ -589,7 +589,8 @@ def main():
     root = tkinter.Tk()
     gameref = Pong(root)
     root.geometry("800x400+300+200")
-
+    root.resizable(0, 0) # Disable Maximize Button
+    
     # Setup Menu
     menu_bar = Menu(root)
     gameref.build_menus(menu_bar, gameref)
