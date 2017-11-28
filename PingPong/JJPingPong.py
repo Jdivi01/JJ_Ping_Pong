@@ -29,8 +29,8 @@ class Pong(Frame):
         self.player2 = None
         self.canvas = None
         self.score = None
-        self.winHEIGHT = 0
-        self.winWIDTH = 0
+        self.winHEIGHT = 800
+        self.winWIDTH = 400
         self.paddleSpeed = 15
         self.textLabel = 0
 
@@ -116,12 +116,13 @@ class Pong(Frame):
         self.parent.quit()
 
     def game_over(self, disp_msg):
-        self.canvas.delete(self.textLabel)
-        self.textLabel = self.canvas.create_text(self.winWIDTH / 2, 10, fill="RED", text="GAME OVER")
+        self.score.update_score_text()
+        self.score.show_end_of_game()
+        self.check_client_destroyed()
         score_readout = "\nFinal Score: %d to %d" % (self.score.player1_score, self.score.player2_score)
         messagebox.showinfo(title="Game Over", message=disp_msg + score_readout + "\nCome back soon!")
         self.quit_pong()
-
+        
     def on_keypress(self, event):
         global player1, player2
 
@@ -239,6 +240,7 @@ class Pong(Frame):
     def reset_score(self):
         self.score.set_score(0, 0)
         self.canvas.coords(self.ball, self.ball_serve_pos1)
+        self.ballDX = abs(self.ballDX)
         self.check_for_winner()
 
     def check_for_winner(self):        
@@ -359,9 +361,7 @@ class Pong(Frame):
             self.user_message_text.set('')
         else:
             self.disp_ui_msg_time += 1
-            
-        self.check_for_winner()
-                
+                            
         # Set timer
         self.after(10, self.play)
 
@@ -545,9 +545,9 @@ class Score():
         self.canvas = canvas
         self.player1_score = 0
         self.player2_score = 0
-        self.window_width = winWIDTH
         self.score_label = None
         self.game_length_var = game_length_var
+        self.pos = (winWIDTH / 2, 10)
         self.update_score_text()
       
     '''Sets the current score'''  
@@ -563,7 +563,7 @@ class Score():
     def update_score_text(self):
         # Update Scoreboard
         self.canvas.delete(self.score_label)
-        self.score_label = self.canvas.create_text(self.window_width / 2, 10, #places the label in the center
+        self.score_label = self.canvas.create_text(self.pos[0], self.pos[1], #places the label in the center
             text=str(self.player1_score) + " | " + str(self.player2_score))
 
     '''Increments player 2's score'''
@@ -574,8 +574,7 @@ class Score():
     '''Increments player 1's score'''
     def player2_scored(self):
         self.player2_score += 1
-        self.update_score_text()
-    
+        self.update_score_text()    
     
     '''Asks if player 1 has won the game'''
     def is_player1_winner(self):
@@ -584,6 +583,11 @@ class Score():
     '''Asks if player 1 has won the game'''
     def is_player2_winner(self):
         return self.player2_score >= self.game_length_var.get()
+    
+    '''Show GAME OVER in place of score'''
+    def show_end_of_game(self):
+        self.canvas.delete(self.score_label)
+        self.canvas.create_text(self.pos[0], self.pos[1], fill="RED", text="GAME OVER")
 
 def main():
     root = tkinter.Tk()
